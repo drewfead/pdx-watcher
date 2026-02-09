@@ -344,7 +344,7 @@ func (s *hollywoodTheatreScraper) sendShowtimes(
 
 			item := internal.ShowtimeListItem{
 				Showtime: internal.SourceShowtime{
-					ID:           strconv.Itoa(ev.ID),
+					ID:           uuid.NewSHA1(s.uuidNamespace, []byte(strconv.Itoa(ev.ID))).String(),
 					Summary:      show.Title,
 					Description:  show.Title,
 					StartTime:    start,

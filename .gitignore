@@ -27,3 +27,4 @@ temp/
 **/*.secret*
 **/secret/
 **/.env.*
+**/.claude/
