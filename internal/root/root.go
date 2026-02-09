@@ -54,23 +54,10 @@ func Root(ctx context.Context, opts ...RootOption) (*cli.Command, error) {
 		opt(cfg)
 	}
 
-	// Create timestamp deserializer for all timestamp fields
-	timestampDeserializer := func(ctx context.Context, flags protocli.FlagContainer) (protobuf.Message, error) {
-		timeStr := flags.String()
-		// If no timestamp provided, return empty timestamp (mapper will apply defaults)
-		if timeStr == "" {
-			return &timestamppb.Timestamp{}, nil
-		}
-		t, err := time.Parse(time.RFC3339, timeStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid timestamp format (expected RFC3339): %w", err)
-		}
-		return timestamppb.New(t), nil
-	}
-
 	registry := cfg.registry
 	if registry == nil {
 		registry = scraper.NewRegistry(
+			scraper.WithScraperForSite(proto.PdxSite_None, scraper.None()),
 			scraper.WithScraperForSite(proto.PdxSite_HollywoodTheatre, scraper.HollywoodTheatre(), scraper.Cached(64, 5*time.Minute)),
 		)
 	}
@@ -109,9 +96,17 @@ func Root(ctx context.Context, opts ...RootOption) (*cli.Command, error) {
 		return nil, fmt.Errorf("failed to create root command: %w", err)
 	}
 
-	// Use a syncing stdout so streamed output (e.g. list-showtimes) appears immediately,
-	// especially on Windows where stdout may be buffered.
-	rootCmd.Writer = &syncWriter{f: os.Stdout}
-
 	return rootCmd, nil
+}
+
+func timestampDeserializer(ctx context.Context, flags protocli.FlagContainer) (protobuf.Message, error) {
+	timeStr := flags.String()
+	if timeStr == "" {
+		return &timestamppb.Timestamp{}, nil
+	}
+	t, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid timestamp format (expected RFC3339): %w", err)
+	}
+	return timestamppb.New(t), nil
 }
