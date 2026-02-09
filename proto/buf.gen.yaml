@@ -1,0 +1,17 @@
+version: v2
+managed:
+  enabled: false
+plugins:
+  - local: ["go", "run", "google.golang.org/protobuf/cmd/protoc-gen-go"]
+    out: .
+    opt:
+      - paths=source_relative
+      - Mproto/cli/v1/cli.proto=github.com/drewfead/proto-cli/proto/cli/v1
+  - local: ["go", "run", "google.golang.org/grpc/cmd/protoc-gen-go-grpc"]
+    out: .
+    opt:
+      - paths=source_relative
+  - local: ["go", "run", "github.com/drewfead/proto-cli/cmd/gen"]
+    out: .
+    opt:
+      - paths=source_relative

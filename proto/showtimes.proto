@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package showtimes;
+
+option go_package = "github.com/drewfead/pdx-watcher/proto";
+
+import "google/protobuf/timestamp.proto";
+import "proto/cli/v1/cli.proto";
+
+service ShowtimeService {
+    option (cli.v1.service_config) = {config_message: "ShowtimeConfig"};
+
+    // ListShowtimes streams all showtimes from a supported theater
+    rpc ListShowtimes(ListShowtimesRequest) returns (stream ListShowtimesResponse);
+}
+
+enum PdxSite {
+    None = 0;
+    HollywoodTheatre = 1;
+}
+
+message ListShowtimesRequest {
+    PdxSite from = 1;
+
+    // Time filtering options (mutually exclusive with after/before)
+    optional google.protobuf.Timestamp after = 2;   // only events after this time
+    optional google.protobuf.Timestamp before = 3;  // only events before this time
+
+    optional int32 limit = 6;  // page size (number of events per page)
+    optional string anchor = 7;  // token for retrieving the next page of results
+}
+
+message ListShowtimesResponse {
+    Showtime showtime = 1;  // the showtime (present for all messages except potentially the last)
+    optional string next_anchor = 2;  // token for the next page (only set on the last message if more results exist)
+}
+
+message Showtime {
+    string id = 1;
+    string summary = 2;
+    optional string description = 3;
+    optional google.protobuf.Timestamp start_time = 4;
+    optional google.protobuf.Timestamp end_time = 5;
+    optional string location = 6;
+
+    ScreeningInfo screening = 10;
+    MovieInfo movie = 11;
+}
+
+message ScreeningInfo {
+    optional string title = 1;
+    optional string series = 2;
+    optional string host = 3;
+    optional string subhed = 4;  // e.g. "in 35mm" from venue listing
+    repeated Link links = 10;
+}
+
+message MovieInfo {
+    optional string title = 1;
+    optional string tagline = 2;
+    optional string overview = 3;
+    repeated Link links = 10;
+}
+
+message Link {
+    string href = 1;
+    optional string display = 10;
+}
+
+message ShowtimeConfig {
+    TMDBConfig tmdb = 1;
+}
+
+message TMDBConfig {
+    string api_key = 1;
+}

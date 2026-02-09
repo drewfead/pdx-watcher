@@ -1,0 +1,8 @@
+# Example pdx-watcher config. Copy to .pdx-watcher.yaml or .pdx-watcher.secret.yaml
+# and fill in values. Secret values belong in .pdx-watcher.secret.yaml (gitignored).
+# Config is under top-level "services" with key matching the service name (showtime-service).
+
+services:
+  showtimeservice:
+    tmdb:
+      api_key: "your-tmdb-api-key"  # Get one at https://www.themoviedb.org/settings/api
