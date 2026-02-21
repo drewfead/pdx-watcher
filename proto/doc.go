@@ -8,6 +8,6 @@
 // Generated files are automatically formatted with golangci-lint fmt and gofumpt.
 package proto
 
-//go:generate go run github.com/bufbuild/buf/cmd/buf generate
-//go:generate go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint fmt .
-//go:generate go run mvdan.cc/gofumpt -w .
+//go:generate go tool buf generate
+//go:generate go tool golangci-lint fmt .
+//go:generate go tool gofumpt -w .

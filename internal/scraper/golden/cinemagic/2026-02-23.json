@@ -1,0 +1,50 @@
+{
+  "data": {
+    "showingsForDate": {
+      "data": [
+        {
+          "id": "2693969",
+          "time": "2026-02-24T00:30:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"digital accessible\"}",
+          "movie": {
+            "id": "104432",
+            "name": "28 Years Later: The Bone Temple",
+            "synopsis": "Dr. Kelson finds himself in a shocking new relationship - with consequences that could change the world as they know it - and Spike's encounter with Jimmy Crystal becomes a nightmare he can't escape.",
+            "starring": "Ralph Fiennes, Jack O'Connell, Alfie Williams",
+            "directedBy": "Nia DaCosta",
+            "duration": 109,
+            "genre": "Horror",
+            "allGenres": "Horror, Thriller, Science Fiction",
+            "rating": "R",
+            "tmdbId": "1272837",
+            "urlSlug": "28-years-later-the-bone-temple"
+          }
+        },
+        {
+          "id": "2682386",
+          "time": "2026-02-24T03:00:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"accessible\"}",
+          "movie": {
+            "id": "103934",
+            "name": "Arco",
+            "synopsis": "Arco, ten years old, lives in a far future. During his first flight in his rainbow suit, he loses control and falls in the past. Iris, a little girl his age from 2075, saw him fall. She rescues him and tries by all means to send him back to his era.",
+            "starring": "Margot Ringard Oldra, Oscar Tresanini, Nathanaël Perrot",
+            "directedBy": "Ugo Bienvenu",
+            "duration": 89,
+            "genre": "Animation",
+            "allGenres": "Animation, Adventure, Science Fiction, Fantasy, Family",
+            "rating": null,
+            "tmdbId": "804370",
+            "urlSlug": "arco"
+          }
+        }
+      ],
+      "count": 2,
+      "resultVersion": "662100415"
+    }
+  }
+}

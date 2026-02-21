@@ -9,30 +9,70 @@ import "proto/cli/v1/cli.proto";
 
 service ShowtimeService {
     option (cli.v1.service_config) = {config_message: "ShowtimeConfig"};
+    option (cli.v1.service) = {
+        name: "showtimes"
+        description: "List showtimes from Portland theaters"
+    };
 
     // ListShowtimes streams all showtimes from a supported theater
-    rpc ListShowtimes(ListShowtimesRequest) returns (stream ListShowtimesResponse);
+    rpc ListShowtimes(ListShowtimesRequest) returns (stream ListShowtimesResponse) {
+        option (cli.v1.command) = {
+            name: "list-showtimes"
+            description: "Stream showtimes from a theater (Hollywood Theatre, Cinemagic, Cinema 21)"
+        };
+    }
 }
 
 enum PdxSite {
     None = 0;
-    HollywoodTheatre = 1;
+    HollywoodTheatre = 1 [(cli.v1.enum_value) = {name: "hollywood-theatre"}];
+    Cinemagic = 2 [(cli.v1.enum_value) = {name: "cinemagic"}];
+    Cinema21 = 3 [(cli.v1.enum_value) = {name: "cinema21"}];
 }
 
 message ListShowtimesRequest {
-    PdxSite from = 1;
+    // Omit for all theaters (interleaved); pass multiple times for specific theaters.
+    repeated PdxSite from = 1 [(cli.v1.flag) = {
+        name: "from"
+        usage: "Theater(s) to list showtimes from (hollywood-theatre, cinemagic, cinema21). Repeat for multiple; omit for all."
+        placeholder: "SITE"
+    }];
 
     // Time filtering options (mutually exclusive with after/before)
-    optional google.protobuf.Timestamp after = 2;   // only events after this time
-    optional google.protobuf.Timestamp before = 3;  // only events before this time
+    optional google.protobuf.Timestamp after = 2 [(cli.v1.flag) = {
+        name: "after"
+        usage: "Only showtimes after this time (RFC3339)"
+        placeholder: "TIME"
+    }];
+    optional google.protobuf.Timestamp before = 3 [(cli.v1.flag) = {
+        name: "before"
+        usage: "Only showtimes before this time (RFC3339)"
+        placeholder: "TIME"
+    }];
 
-    optional int32 limit = 6;  // page size (number of events per page)
-    optional string anchor = 7;  // token for retrieving the next page of results
+    optional int32 limit = 6 [(cli.v1.flag) = {
+        name: "limit"
+        usage: "Max number of showtimes per page"
+        placeholder: "N"
+    }];
+    optional string anchor = 7 [(cli.v1.flag) = {
+        name: "anchor"
+        usage: "Page token from previous response for pagination"
+        placeholder: "TOKEN"
+    }];
+
+    // Display only: times are shown in this IANA timezone. Server ignores this.
+    optional string output_timezone = 8 [(cli.v1.flag) = {
+        name: "timezone"
+        usage: "Display times in this IANA timezone (e.g. America/Los_Angeles). Default: CLI local time"
+        placeholder: "TZ"
+    }];
 }
 
 message ListShowtimesResponse {
     Showtime showtime = 1;  // the showtime (present for all messages except potentially the last)
     optional string next_anchor = 2;  // token for the next page (only set on the last message if more results exist)
+    optional PdxSite site = 3;  // source theater for correct per-row display when interleaved
 }
 
 message Showtime {

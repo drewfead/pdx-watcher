@@ -54,9 +54,41 @@ func protoTime(ts *timestamppb.Timestamp) time.Time {
 }
 
 func (s *showtimesService) ListShowtimes(req *proto.ListShowtimesRequest, stream proto.ShowtimeService_ListShowtimesServer) error {
-	scraper, err := s.registry.GetScraper(req.From.Descriptor().Syntax().GoString())
-	if err != nil {
-		return fmt.Errorf("unsupported site: %w", err)
+	var sc internal.Scraper
+	switch {
+	case len(req.From) == 0:
+		sites := s.registry.AllSites()
+		if len(sites) == 0 {
+			return fmt.Errorf("no theaters registered")
+		}
+		scrapers := make([]internal.Scraper, 0, len(sites))
+		for _, site := range sites {
+			scraper, err := s.registry.GetScraper(site.String())
+			if err != nil {
+				continue
+			}
+			scrapers = append(scrapers, scraper)
+		}
+		if len(scrapers) == 0 {
+			return fmt.Errorf("no scrapers available")
+		}
+		sc = scraper.Interleaved(scrapers...)
+	case len(req.From) == 1:
+		var err error
+		sc, err = s.registry.GetScraper(req.From[0].String())
+		if err != nil {
+			return fmt.Errorf("unsupported site: %w", err)
+		}
+	default:
+		scrapers := make([]internal.Scraper, 0, len(req.From))
+		for _, site := range req.From {
+			scraper, err := s.registry.GetScraper(site.String())
+			if err != nil {
+				return fmt.Errorf("unsupported site %s: %w", site.String(), err)
+			}
+			scrapers = append(scrapers, scraper)
+		}
+		sc = scraper.Interleaved(scrapers...)
 	}
 
 	limit := defaultLimit
@@ -75,7 +107,7 @@ func (s *showtimesService) ListShowtimes(req *proto.ListShowtimesRequest, stream
 	if t := protoTime(req.Before); !t.IsZero() {
 		before = t
 	}
-	showtimes, err := scraper.ScrapeShowtimes(stream.Context(), internal.ListShowtimesRequest{
+	showtimes, err := sc.ScrapeShowtimes(stream.Context(), internal.ListShowtimesRequest{
 		After:  after,
 		Before: before,
 		Limit:  limit,
@@ -94,13 +126,17 @@ func (s *showtimesService) ListShowtimes(req *proto.ListShowtimesRequest, stream
 		if showtime.NextAnchor != "" {
 			resp.NextAnchor = &showtime.NextAnchor
 		}
+		if showtime.Site != proto.PdxSite_None {
+			siteVal := showtime.Site
+			resp.Site = &siteVal
+		}
 		if err := stream.Send(resp); err != nil {
 			slog.Error("list-showtimes: stream.Send failed", "error", err, "sent_so_far", sent)
 			return err
 		}
 		sent++
 	}
-	slog.Debug("list-showtimes", "from", req.From.String(), "sent", sent)
+	slog.Debug("list-showtimes", "from", req.From, "sent", sent)
 	return nil
 }
 

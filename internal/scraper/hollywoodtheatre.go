@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -82,6 +84,8 @@ const (
 
 var defaultDescriptor = proto.PdxSite_HollywoodTheatre.Descriptor().Syntax().GoString()
 
+var errHTTPRequestFailed = errors.New("http request failed")
+
 const portlandLocale = "en_US"
 const portlandTimezoneCode = "America/Los_Angeles"
 const hollywoodTheatreLocation = "Hollywood Theatre, 4122 NE Sandy Blvd, Portland, Oregon, 97212"
@@ -119,6 +123,9 @@ func (s *hollywoodTheatreScraper) ScrapeShowtimes(
 		if err := json.Unmarshal(body, &payload); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal %s: %w", view, err)
 		}
+		for i := range payload.Shows {
+			payload.Shows[i].view = view
+		}
 		allShows = append(allShows, payload.Shows...)
 	}
 
@@ -152,12 +159,7 @@ func (s *hollywoodTheatreScraper) PullGolden(ctx context.Context, goldenDir stri
 	if err != nil {
 		return fmt.Errorf("failed to fetch golden data: %w", err)
 	}
-	for key, body := range allJSON {
-		if err := os.WriteFile(filepath.Join(goldenDir, key+".json"), body, 0o644); err != nil {
-			return fmt.Errorf("failed to write %s golden file: %w", key, err)
-		}
-	}
-	return nil
+	return writeGoldenFiles(goldenDir, allJSON)
 }
 
 func (s *hollywoodTheatreScraper) MountGolden(ctx context.Context, goldenDir string) (http.Handler, error) {
@@ -228,7 +230,7 @@ func (s *hollywoodTheatreScraper) fetchAllViaHTTP(ctx context.Context, listReq i
 			return nil, fmt.Errorf("failed to read %s response: %w", view, err)
 		}
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("failed to get %s: %s", view, resp.Status)
+			return nil, fmt.Errorf("failed to get %s: %w: %s", view, errHTTPRequestFailed, resp.Status)
 		}
 		results[view] = body
 	}
@@ -288,7 +290,8 @@ func (s *hollywoodTheatreScraper) sendShowtimes(
 	dateLayout := time.DateOnly
 	timeLayout := "3:04pm" // almost time.Kitchen, but with lowercase "am/pm"
 
-	var sent, skippedAfter, skippedBefore, skippedParse int
+	var items []internal.ShowtimeListItem
+	var skippedAfter, skippedBefore, skippedParse int
 	for _, show := range shows {
 		if show.HideEvents {
 			continue
@@ -317,15 +320,34 @@ func (s *hollywoodTheatreScraper) sendShowtimes(
 		}
 
 		for _, ev := range show.Events {
-			startTime, err := time.ParseInLocation(timeLayout, ev.StartTime, portlandTZ)
-			if err != nil {
+			var start time.Time
+			var directorHint string
+			var runtimeHint time.Duration
+			if cal, ok := calendarByID[ev.ID]; ok {
+				directorHint = cal.DirectorHint
+				runtimeHint = cal.RuntimeHint
+				if show.view == "coming-soon" && !cal.Start.IsZero() {
+					start = cal.Start
+				}
+			}
+			if start.IsZero() && show.view == "coming-soon" {
+				// Coming-soon bundles all future events under one query_date
+				// with wrong start_times. Without calendar data we can't
+				// determine the correct date or time, so skip.
 				skippedParse++
 				continue
 			}
-			start := time.Date(
-				showDate.Year(), showDate.Month(), showDate.Day(),
-				startTime.Hour(), startTime.Minute(), 0, 0, portlandTZ,
-			)
+			if start.IsZero() {
+				startTime, err := time.ParseInLocation(timeLayout, ev.StartTime, portlandTZ)
+				if err != nil {
+					skippedParse++
+					continue
+				}
+				start = time.Date(
+					showDate.Year(), showDate.Month(), showDate.Day(),
+					startTime.Hour(), startTime.Minute(), 0, 0, portlandTZ,
+				)
+			}
 			if !listReq.After.IsZero() && !start.After(listReq.After) {
 				skippedAfter++
 				continue
@@ -335,14 +357,7 @@ func (s *hollywoodTheatreScraper) sendShowtimes(
 				continue
 			}
 
-			var directorHint string
-			var runtimeHint time.Duration
-			if cal, ok := calendarByID[ev.ID]; ok {
-				directorHint = cal.DirectorHint
-				runtimeHint = cal.RuntimeHint
-			}
-
-			item := internal.ShowtimeListItem{
+			items = append(items, internal.ShowtimeListItem{
 				Showtime: internal.SourceShowtime{
 					ID:           uuid.NewSHA1(s.uuidNamespace, []byte(strconv.Itoa(ev.ID))).String(),
 					Summary:      show.Title,
@@ -354,10 +369,16 @@ func (s *hollywoodTheatreScraper) sendShowtimes(
 					DirectorHint: directorHint,
 					RuntimeHint:  runtimeHint,
 				},
-			}
-			hits <- item
-			sent++
+				Site: proto.PdxSite_HollywoodTheatre,
+			})
 		}
+	}
+
+	slices.SortFunc(items, func(a, b internal.ShowtimeListItem) int {
+		return a.Showtime.StartTime.Compare(b.Showtime.StartTime)
+	})
+	for _, item := range items {
+		hits <- item
 	}
 }
 
@@ -417,12 +438,22 @@ func parseCalendarEventsByID(body []byte) (map[int]calendarEventDetails, error) 
 	out := make(map[int]calendarEventDetails)
 	for _, e := range resp.Events {
 		for _, ev := range e.Events {
+			var start time.Time
 			var d time.Duration
-			if ev.Start != "" && ev.End != "" {
-				start, err1 := time.Parse(time.RFC3339, ev.Start)
-				end, err2 := time.Parse(time.RFC3339, ev.End)
-				if err1 == nil && err2 == nil && end.After(start) {
-					d = end.Sub(start)
+			if ev.Start != "" {
+				s, err := time.Parse(time.RFC3339, ev.Start)
+				if err == nil {
+					if ev.End != "" {
+						end, err2 := time.Parse(time.RFC3339, ev.End)
+						if err2 == nil && end.After(s) {
+							d = end.Sub(s)
+						}
+					}
+					// The calendar API uses +00:00 but stores Portland local
+					// wall-clock times for future events. Reinterpret in Portland TZ.
+					y, mo, dy := s.Date()
+					h, mi, sc := s.Clock()
+					start = time.Date(y, mo, dy, h, mi, sc, 0, portlandTZ)
 				}
 			}
 			if d == 0 && ev.Runtime != "" {
@@ -432,6 +463,7 @@ func parseCalendarEventsByID(body []byte) (map[int]calendarEventDetails, error) 
 				}
 			}
 			out[ev.EventID] = calendarEventDetails{
+				Start:        start,
 				DirectorHint: strings.TrimSpace(ev.Director),
 				RuntimeHint:  d,
 			}
@@ -459,6 +491,7 @@ type showEntry struct {
 	DescriptiveAudio bool         `json:"descriptive_audio"`
 	HideEvents       bool         `json:"hide_events"`
 	Events           []eventEntry `json:"events"`
+	view             string       // "today" or "coming-soon"; set after unmarshal
 }
 
 type eventEntry struct {
@@ -482,6 +515,7 @@ type calendarEventsResponse struct {
 
 // calendarEventDetails is attached to each showtime when we have calendar-events data.
 type calendarEventDetails struct {
+	Start        time.Time
 	DirectorHint string
 	RuntimeHint  time.Duration
 }

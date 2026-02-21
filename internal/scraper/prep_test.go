@@ -12,6 +12,8 @@ import (
 
 var goldenScrapers = map[string]internal.GoldenScraper{
 	"hollywoodtheatre": HollywoodTheatre().(internal.GoldenScraper),
+	"cinemagic":        Cinemagic().(internal.GoldenScraper),
+	"cinema21":         Cinema21().(internal.GoldenScraper),
 }
 
 const goldenDir = "golden"
@@ -23,7 +25,10 @@ func TestPrep_PullAllGolden(t *testing.T) {
 
 	for name, s := range goldenScrapers {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			dir := filepath.Join(goldenDir, name)
+			require.NoError(t, os.RemoveAll(dir), "clean golden dir")
+			require.NoError(t, os.MkdirAll(dir, 0o750), "create golden dir")
 			err := s.PullGolden(t.Context(), dir)
 			require.NoError(t, err, "PullGolden")
 			t.Logf("wrote golden files to %s", dir)

@@ -3,10 +3,9 @@
 # Binary output directory (gitignored)
 BIN_DIR := bin
 
-# Installation directory (can be overridden via command line)
-INSTALL_LOCATION ?= ~/bin
-
-# On Windows, use .exe so the binary is opened as an executable by default.
+# Installation directory (can be overridden via command line).
+# Default is $(GOPATH)/bin (same as "go install"; uses "go env GOPATH" so it works when GOPATH is unset).
+INSTALL_LOCATION ?= $(shell go env GOPATH)/bin
 ifeq ($(OS),Windows_NT)
 BIN_NAME := pdx-watcher.exe
 else
@@ -22,9 +21,9 @@ build: ## Build the cali binary
 	@echo "✓ Built: $(BIN_DIR)/$(BIN_NAME)"
 
 .PHONY: install
-install: build ## Build and install cal to ~/bin (override with INSTALL_LOCATION=/path)
+install: build ## Build and install to INSTALL_LOCATION (default: $(GOPATH)/bin)
 	@echo "Installing $(BIN_NAME) to $(INSTALL_LOCATION)..."
-	cp $(BIN_DIR)/$(BIN_NAME) $(INSTALL_LOCATION)/$(BIN_NAME)
+	@mkdir -p "$(INSTALL_LOCATION)" && cp "$(BIN_DIR)/$(BIN_NAME)" "$(INSTALL_LOCATION)/$(BIN_NAME)"
 	@echo "✓ Installed: $(INSTALL_LOCATION)/$(BIN_NAME)"
 
 .PHONY: clean
@@ -40,12 +39,12 @@ clean: ## Clean build artifacts and generated proto files
 .PHONY: buf/login
 buf/login: ## Login to buf registry
 	@echo "Logging in to buf registry..."
-	go run github.com/bufbuild/buf/cmd/buf registry login
+	go tool buf registry login
 
 .PHONY: buf/dep-update
 buf/dep-update: ## Resolve and lock BSR deps (creates/updates proto/buf.lock). Run after adding deps to buf.yaml. Requires buf registry login.
 	@echo "Updating buf dependencies..."
-	go run github.com/bufbuild/buf/cmd/buf dep update proto
+	go tool buf dep update proto
 	@echo "✓ buf.lock updated"
 
 .PHONY: generate
@@ -84,12 +83,12 @@ test/golden:  ## Pull fresh golden data from live sites
 
 .PHONY: lint
 lint: ## Run linter on all files
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint run ./...
+	go tool golangci-lint run ./...
 
 .PHONY: fmt
 fmt: ## Auto-format code
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint fmt ./...
-	go run mvdan.cc/gofumpt -l -w .
+	go tool golangci-lint fmt ./...
+	go tool gofumpt -l -w .
 
 ##@ Misc.
 

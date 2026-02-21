@@ -18,8 +18,8 @@ import (
 	"strings"
 )
 
-// getOutputWriter opens the specified output file or returns cmd.Writer (if set) or stdout
-func getOutputWriter(cmd *v3.Command, path string) (io.Writer, error) {
+// getShowtimeServiceOutputWriter opens the specified output file or returns cmd.Writer (if set) or stdout
+func getShowtimeServiceOutputWriter(cmd *v3.Command, path string) (io.Writer, error) {
 	if path == "-" || path == "" {
 		// Use cmd.Writer if set, otherwise try root command's Writer, otherwise stdout
 		if cmd.Writer != nil {
@@ -33,16 +33,20 @@ func getOutputWriter(cmd *v3.Command, path string) (io.Writer, error) {
 	return os.Create(path)
 }
 
-// parsePdxSite parses a string value to PdxSite enum
+// parseShowtimeServicePdxSite parses a string value to PdxSite enum
 // Accepts enum value names (case-insensitive) or custom CLI names if specified
-func parsePdxSite(value string) (PdxSite, error) {
+func parseShowtimeServicePdxSite(value string) (PdxSite, error) {
 	// Convert to lowercase for case-insensitive comparison
 	lower := strings.ToLower(value)
 
 	// Try parsing as enum value name or custom CLI name
 	switch lower {
-	case "hollywoodtheatre":
+	case "hollywoodtheatre", "hollywood-theatre":
 		return PdxSite_HollywoodTheatre, nil
+	case "cinemagic":
+		return PdxSite_Cinemagic, nil
+	case "cinema21":
+		return PdxSite_Cinema21, nil
 	}
 
 	// Try parsing as number
@@ -52,17 +56,17 @@ func parsePdxSite(value string) (PdxSite, error) {
 	}
 
 	// Invalid value
-	return 0, fmt.Errorf("invalid %s value: %q (valid values: %s)", "PdxSite", value, "hollywoodtheatre")
+	return 0, fmt.Errorf("invalid %s value: %q (valid values: %s)", "PdxSite", value, "hollywood-theatre, cinemagic, cinema21")
 }
 
-// localServerStream_ListShowtimes is a helper type for local server streaming calls to ListShowtimes
-type localServerStream_ListShowtimes struct {
+// localServerStream_ShowtimeService_ListShowtimes is a helper type for local server streaming calls to ListShowtimes
+type localServerStream_ShowtimeService_ListShowtimes struct {
 	ctx       context.Context
 	responses chan *ListShowtimesResponse
 	errors    chan error
 }
 
-func (s *localServerStream_ListShowtimes) Send(resp *ListShowtimesResponse) error {
+func (s *localServerStream_ShowtimeService_ListShowtimes) Send(resp *ListShowtimesResponse) error {
 	select {
 	case s.responses <- resp:
 		return nil
@@ -71,21 +75,21 @@ func (s *localServerStream_ListShowtimes) Send(resp *ListShowtimesResponse) erro
 	}
 }
 
-func (s *localServerStream_ListShowtimes) Context() context.Context {
+func (s *localServerStream_ShowtimeService_ListShowtimes) Context() context.Context {
 	return s.ctx
 }
 
-func (s *localServerStream_ListShowtimes) SetHeader(metadata.MD) error {
+func (s *localServerStream_ShowtimeService_ListShowtimes) SetHeader(metadata.MD) error {
 	return nil
 }
 
-func (s *localServerStream_ListShowtimes) SendHeader(metadata.MD) error {
+func (s *localServerStream_ShowtimeService_ListShowtimes) SendHeader(metadata.MD) error {
 	return nil
 }
 
-func (s *localServerStream_ListShowtimes) SetTrailer(metadata.MD) {}
+func (s *localServerStream_ShowtimeService_ListShowtimes) SetTrailer(metadata.MD) {}
 
-func (s *localServerStream_ListShowtimes) SendMsg(m any) error {
+func (s *localServerStream_ShowtimeService_ListShowtimes) SendMsg(m any) error {
 	msg, ok := m.(*ListShowtimesResponse)
 	if !ok {
 		return fmt.Errorf("invalid message type: expected *%s, got %T", "ListShowtimesResponse", m)
@@ -93,7 +97,7 @@ func (s *localServerStream_ListShowtimes) SendMsg(m any) error {
 	return s.Send(msg)
 }
 
-func (s *localServerStream_ListShowtimes) RecvMsg(m any) error {
+func (s *localServerStream_ShowtimeService_ListShowtimes) RecvMsg(m any) error {
 	return fmt.Errorf("RecvMsg not supported on server streaming")
 }
 
@@ -126,27 +130,43 @@ func ShowtimeServiceCommand(ctx context.Context, implOrFactory interface{}, opts
 		Name:  "delimiter",
 		Usage: "Delimiter between streamed messages",
 		Value: "\n",
+	}, &v3.StringFlag{
+		Name:  "input-file",
+		Usage: "Read request from file (JSON or YAML). CLI flags override file values",
+	}, &v3.StringFlag{
+		Name:  "input-format",
+		Usage: "Input file format (auto-detected from extension if not set)",
 	}}
 
-	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "from",
-		Usage: "From",
+	flags_list_showtimes = append(flags_list_showtimes, &v3.StringSliceFlag{
+		DefaultText: "SITE",
+		Name:        "from",
+		Usage:       "Theater(s) to list showtimes from (hollywood-theatre, cinemagic, cinema21). Repeat for multiple; omit for all. [hollywood-theatre|cinemagic|cinema21]",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "after",
-		Usage: "After (google.protobuf.Timestamp)",
+		DefaultText: "TIME",
+		Name:        "after",
+		Usage:       "Only showtimes after this time (RFC3339)",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "before",
-		Usage: "Before (google.protobuf.Timestamp)",
+		DefaultText: "TIME",
+		Name:        "before",
+		Usage:       "Only showtimes before this time (RFC3339)",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.Int32Flag{
-		Name:  "limit",
-		Usage: "Limit",
+		DefaultText: "N",
+		Name:        "limit",
+		Usage:       "Max number of showtimes per page",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "anchor",
-		Usage: "Anchor",
+		DefaultText: "TOKEN",
+		Name:        "anchor",
+		Usage:       "Page token from previous response for pagination",
+	})
+	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
+		DefaultText: "TZ",
+		Name:        "timezone",
+		Usage:       "Display times in this IANA timezone (e.g. America/Los_Angeles). Default: CLI local time",
 	})
 
 	// Add config field flags for single-command mode
@@ -161,12 +181,6 @@ func ShowtimeServiceCommand(ctx context.Context, implOrFactory interface{}, opts
 
 	commands = append(commands, &v3.Command{
 		Action: func(cmdCtx context.Context, cmd *v3.Command) error {
-			for _, hook := range options.BeforeCommandHooks() {
-				if err := hook(cmdCtx, cmd); err != nil {
-					return fmt.Errorf("before hook failed: %w", err)
-				}
-			}
-
 			defer func() {
 				hooks := options.AfterCommandHooks()
 				for i := len(hooks) - 1; i >= 0; i-- {
@@ -176,83 +190,69 @@ func ShowtimeServiceCommand(ctx context.Context, implOrFactory interface{}, opts
 				}
 			}()
 
+			for _, hook := range options.BeforeCommandHooks() {
+				if err := hook(cmdCtx, cmd); err != nil {
+					return fmt.Errorf("before hook failed: %w", err)
+				}
+			}
+
 			// Build request message
 			var req *ListShowtimesRequest
 
-			// Check for custom flag deserializer for showtimes.ListShowtimesRequest
-			deserializer, hasDeserializer := options.FlagDeserializer("showtimes.ListShowtimesRequest")
-			if hasDeserializer {
-				// Use custom deserializer for top-level request
-				requestFlags := protocli.NewFlagContainer(cmd, "")
-				msg, err := deserializer(cmdCtx, requestFlags)
-				if err != nil {
-					return fmt.Errorf("custom deserializer failed: %w", err)
-				}
-				if msg == nil {
-					return fmt.Errorf("custom deserializer returned nil message")
-				}
-				var ok bool
-				req, ok = msg.(*ListShowtimesRequest)
-				if !ok {
-					return fmt.Errorf("custom deserializer returned wrong type: expected *%s, got %T", "ListShowtimesRequest", msg)
-				}
-			} else {
-				// Use auto-generated flag parsing
+			// Check for file-based input
+			inputFile := cmd.String("input-file")
+			if inputFile != "" {
+				// Read request from file
 				req = &ListShowtimesRequest{}
-				if cmd.IsSet("from") {
-					val, err := parsePdxSite(cmd.String("from"))
-					if err != nil {
-						return fmt.Errorf("invalid value for --from: %w", err)
-					}
-					req.From = val
+				if err := protocli.ReadInputFile(inputFile, cmd.String("input-format"), options.InputFormats(), req); err != nil {
+					return err
 				}
-				// Field After: check for custom deserializer for google.protobuf.Timestamp
-				if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
-					// Use custom deserializer for nested message
-					// Create FlagContainer for field flag: after
-					fieldFlags := protocli.NewFlagContainer(cmd, "after")
-					fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
-					if fieldErr != nil {
-						return fmt.Errorf("failed to deserialize field After: %w", fieldErr)
-					}
-					// Handle nil return from deserializer (means skip/use default)
-					if fieldMsg != nil {
-						typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
-						if !fieldOk {
-							return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+				// Apply flag overrides (only explicitly-set flags)
+				if cmd.IsSet("from") {
+					req.From = nil
+					for _, s := range cmd.StringSlice("from") {
+						val, err := parseShowtimeServicePdxSite(s)
+						if err != nil {
+							return fmt.Errorf("invalid value for --from: %w", err)
 						}
-						req.After = typedField
+						req.From = append(req.From, val)
 					}
-				} else {
-					// No custom deserializer - check if user provided a value
-					if cmd.IsSet("after") {
+				}
+				if cmd.IsSet("after") {
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						fieldFlags := protocli.NewFlagContainer(cmd, "after")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field After: %w", fieldErr)
+						}
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.After = typedField
+						}
+					} else {
 						return fmt.Errorf("flag --after requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
 					}
-					// No value provided - leave field as nil
 				}
-				// Field Before: check for custom deserializer for google.protobuf.Timestamp
-				if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
-					// Use custom deserializer for nested message
-					// Create FlagContainer for field flag: before
-					fieldFlags := protocli.NewFlagContainer(cmd, "before")
-					fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
-					if fieldErr != nil {
-						return fmt.Errorf("failed to deserialize field Before: %w", fieldErr)
-					}
-					// Handle nil return from deserializer (means skip/use default)
-					if fieldMsg != nil {
-						typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
-						if !fieldOk {
-							return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+				if cmd.IsSet("before") {
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						fieldFlags := protocli.NewFlagContainer(cmd, "before")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field Before: %w", fieldErr)
 						}
-						req.Before = typedField
-					}
-				} else {
-					// No custom deserializer - check if user provided a value
-					if cmd.IsSet("before") {
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.Before = typedField
+						}
+					} else {
 						return fmt.Errorf("flag --before requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
 					}
-					// No value provided - leave field as nil
 				}
 				if cmd.IsSet("limit") {
 					val := cmd.Int32("limit")
@@ -262,10 +262,103 @@ func ShowtimeServiceCommand(ctx context.Context, implOrFactory interface{}, opts
 					val := cmd.String("anchor")
 					req.Anchor = &val
 				}
+				if cmd.IsSet("output-timezone") {
+					val := cmd.String("output-timezone")
+					req.OutputTimezone = &val
+				}
+			} else {
+				// Check for custom flag deserializer for showtimes.ListShowtimesRequest
+				deserializer, hasDeserializer := options.FlagDeserializer("showtimes.ListShowtimesRequest")
+				if hasDeserializer {
+					// Use custom deserializer for top-level request
+					requestFlags := protocli.NewFlagContainer(cmd, "")
+					msg, err := deserializer(cmdCtx, requestFlags)
+					if err != nil {
+						return fmt.Errorf("custom deserializer failed: %w", err)
+					}
+					if msg == nil {
+						return fmt.Errorf("custom deserializer returned nil message")
+					}
+					var ok bool
+					req, ok = msg.(*ListShowtimesRequest)
+					if !ok {
+						return fmt.Errorf("custom deserializer returned wrong type: expected *%s, got %T", "ListShowtimesRequest", msg)
+					}
+				} else {
+					// Use auto-generated flag parsing
+					req = &ListShowtimesRequest{}
+					for _, s := range cmd.StringSlice("from") {
+						val, err := parseShowtimeServicePdxSite(s)
+						if err != nil {
+							return fmt.Errorf("invalid value for --from: %w", err)
+						}
+						req.From = append(req.From, val)
+					}
+					// Field After: check for custom deserializer for google.protobuf.Timestamp
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						// Use custom deserializer for nested message
+						// Create FlagContainer for field flag: after
+						fieldFlags := protocli.NewFlagContainer(cmd, "after")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field After: %w", fieldErr)
+						}
+						// Handle nil return from deserializer (means skip/use default)
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.After = typedField
+						}
+					} else {
+						// No custom deserializer - check if user provided a value
+						if cmd.IsSet("after") {
+							return fmt.Errorf("flag --after requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
+						}
+						// No value provided - leave field as nil
+					}
+					// Field Before: check for custom deserializer for google.protobuf.Timestamp
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						// Use custom deserializer for nested message
+						// Create FlagContainer for field flag: before
+						fieldFlags := protocli.NewFlagContainer(cmd, "before")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field Before: %w", fieldErr)
+						}
+						// Handle nil return from deserializer (means skip/use default)
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.Before = typedField
+						}
+					} else {
+						// No custom deserializer - check if user provided a value
+						if cmd.IsSet("before") {
+							return fmt.Errorf("flag --before requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
+						}
+						// No value provided - leave field as nil
+					}
+					if cmd.IsSet("limit") {
+						val := cmd.Int32("limit")
+						req.Limit = &val
+					}
+					if cmd.IsSet("anchor") {
+						val := cmd.String("anchor")
+						req.Anchor = &val
+					}
+					if cmd.IsSet("output-timezone") {
+						val := cmd.String("output-timezone")
+						req.OutputTimezone = &val
+					}
+				}
 			}
 
 			// Open output writer
-			outputWriter, err := getOutputWriter(cmd, cmd.String("output"))
+			outputWriter, err := getShowtimeServiceOutputWriter(cmd, cmd.String("output"))
 			if err != nil {
 				return fmt.Errorf("failed to open output: %w", err)
 			}
@@ -358,7 +451,7 @@ func ShowtimeServiceCommand(ctx context.Context, implOrFactory interface{}, opts
 				}
 
 				// Create local stream wrapper for direct call
-				localStream := &localServerStream_ListShowtimes{
+				localStream := &localServerStream_ShowtimeService_ListShowtimes{
 					ctx:       cmdCtx,
 					errors:    make(chan error),
 					responses: make(chan *ListShowtimesResponse),
@@ -414,14 +507,14 @@ func ShowtimeServiceCommand(ctx context.Context, implOrFactory interface{}, opts
 		},
 		Flags: flags_list_showtimes,
 		Name:  "list-showtimes",
-		Usage: "ListShowtimes (streaming)",
+		Usage: "Stream showtimes from a theater (Hollywood Theatre, Cinemagic, Cinema 21)",
 	})
 
 	return &protocli.ServiceCLI{
 		Command: &v3.Command{
 			Commands: commands,
-			Name:     "showtime-service",
-			Usage:    "Showtime commands",
+			Name:     "showtimes",
+			Usage:    "List showtimes from Portland theaters",
 		},
 		ConfigMessageType: "ShowtimeConfig",
 		ConfigPrototype:   &ShowtimeConfig{},
@@ -429,7 +522,7 @@ func ShowtimeServiceCommand(ctx context.Context, implOrFactory interface{}, opts
 		RegisterFunc: func(s *grpc.Server, impl interface{}) {
 			RegisterShowtimeServiceServer(s, impl.(ShowtimeServiceServer))
 		},
-		ServiceName: "showtime-service",
+		ServiceName: "showtimes",
 	}
 }
 
@@ -464,27 +557,43 @@ func ShowtimeServiceCommandsFlat(ctx context.Context, implOrFactory interface{},
 		Name:  "delimiter",
 		Usage: "Delimiter between streamed messages",
 		Value: "\n",
+	}, &v3.StringFlag{
+		Name:  "input-file",
+		Usage: "Read request from file (JSON or YAML). CLI flags override file values",
+	}, &v3.StringFlag{
+		Name:  "input-format",
+		Usage: "Input file format (auto-detected from extension if not set)",
 	}}
 
-	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "from",
-		Usage: "From",
+	flags_list_showtimes = append(flags_list_showtimes, &v3.StringSliceFlag{
+		DefaultText: "SITE",
+		Name:        "from",
+		Usage:       "Theater(s) to list showtimes from (hollywood-theatre, cinemagic, cinema21). Repeat for multiple; omit for all. [hollywood-theatre|cinemagic|cinema21]",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "after",
-		Usage: "After (google.protobuf.Timestamp)",
+		DefaultText: "TIME",
+		Name:        "after",
+		Usage:       "Only showtimes after this time (RFC3339)",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "before",
-		Usage: "Before (google.protobuf.Timestamp)",
+		DefaultText: "TIME",
+		Name:        "before",
+		Usage:       "Only showtimes before this time (RFC3339)",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.Int32Flag{
-		Name:  "limit",
-		Usage: "Limit",
+		DefaultText: "N",
+		Name:        "limit",
+		Usage:       "Max number of showtimes per page",
 	})
 	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
-		Name:  "anchor",
-		Usage: "Anchor",
+		DefaultText: "TOKEN",
+		Name:        "anchor",
+		Usage:       "Page token from previous response for pagination",
+	})
+	flags_list_showtimes = append(flags_list_showtimes, &v3.StringFlag{
+		DefaultText: "TZ",
+		Name:        "timezone",
+		Usage:       "Display times in this IANA timezone (e.g. America/Los_Angeles). Default: CLI local time",
 	})
 
 	// Add config field flags for single-command mode
@@ -499,12 +608,6 @@ func ShowtimeServiceCommandsFlat(ctx context.Context, implOrFactory interface{},
 
 	commands = append(commands, &v3.Command{
 		Action: func(cmdCtx context.Context, cmd *v3.Command) error {
-			for _, hook := range options.BeforeCommandHooks() {
-				if err := hook(cmdCtx, cmd); err != nil {
-					return fmt.Errorf("before hook failed: %w", err)
-				}
-			}
-
 			defer func() {
 				hooks := options.AfterCommandHooks()
 				for i := len(hooks) - 1; i >= 0; i-- {
@@ -514,83 +617,69 @@ func ShowtimeServiceCommandsFlat(ctx context.Context, implOrFactory interface{},
 				}
 			}()
 
+			for _, hook := range options.BeforeCommandHooks() {
+				if err := hook(cmdCtx, cmd); err != nil {
+					return fmt.Errorf("before hook failed: %w", err)
+				}
+			}
+
 			// Build request message
 			var req *ListShowtimesRequest
 
-			// Check for custom flag deserializer for showtimes.ListShowtimesRequest
-			deserializer, hasDeserializer := options.FlagDeserializer("showtimes.ListShowtimesRequest")
-			if hasDeserializer {
-				// Use custom deserializer for top-level request
-				requestFlags := protocli.NewFlagContainer(cmd, "")
-				msg, err := deserializer(cmdCtx, requestFlags)
-				if err != nil {
-					return fmt.Errorf("custom deserializer failed: %w", err)
-				}
-				if msg == nil {
-					return fmt.Errorf("custom deserializer returned nil message")
-				}
-				var ok bool
-				req, ok = msg.(*ListShowtimesRequest)
-				if !ok {
-					return fmt.Errorf("custom deserializer returned wrong type: expected *%s, got %T", "ListShowtimesRequest", msg)
-				}
-			} else {
-				// Use auto-generated flag parsing
+			// Check for file-based input
+			inputFile := cmd.String("input-file")
+			if inputFile != "" {
+				// Read request from file
 				req = &ListShowtimesRequest{}
-				if cmd.IsSet("from") {
-					val, err := parsePdxSite(cmd.String("from"))
-					if err != nil {
-						return fmt.Errorf("invalid value for --from: %w", err)
-					}
-					req.From = val
+				if err := protocli.ReadInputFile(inputFile, cmd.String("input-format"), options.InputFormats(), req); err != nil {
+					return err
 				}
-				// Field After: check for custom deserializer for google.protobuf.Timestamp
-				if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
-					// Use custom deserializer for nested message
-					// Create FlagContainer for field flag: after
-					fieldFlags := protocli.NewFlagContainer(cmd, "after")
-					fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
-					if fieldErr != nil {
-						return fmt.Errorf("failed to deserialize field After: %w", fieldErr)
-					}
-					// Handle nil return from deserializer (means skip/use default)
-					if fieldMsg != nil {
-						typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
-						if !fieldOk {
-							return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+				// Apply flag overrides (only explicitly-set flags)
+				if cmd.IsSet("from") {
+					req.From = nil
+					for _, s := range cmd.StringSlice("from") {
+						val, err := parseShowtimeServicePdxSite(s)
+						if err != nil {
+							return fmt.Errorf("invalid value for --from: %w", err)
 						}
-						req.After = typedField
+						req.From = append(req.From, val)
 					}
-				} else {
-					// No custom deserializer - check if user provided a value
-					if cmd.IsSet("after") {
+				}
+				if cmd.IsSet("after") {
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						fieldFlags := protocli.NewFlagContainer(cmd, "after")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field After: %w", fieldErr)
+						}
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.After = typedField
+						}
+					} else {
 						return fmt.Errorf("flag --after requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
 					}
-					// No value provided - leave field as nil
 				}
-				// Field Before: check for custom deserializer for google.protobuf.Timestamp
-				if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
-					// Use custom deserializer for nested message
-					// Create FlagContainer for field flag: before
-					fieldFlags := protocli.NewFlagContainer(cmd, "before")
-					fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
-					if fieldErr != nil {
-						return fmt.Errorf("failed to deserialize field Before: %w", fieldErr)
-					}
-					// Handle nil return from deserializer (means skip/use default)
-					if fieldMsg != nil {
-						typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
-						if !fieldOk {
-							return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+				if cmd.IsSet("before") {
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						fieldFlags := protocli.NewFlagContainer(cmd, "before")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field Before: %w", fieldErr)
 						}
-						req.Before = typedField
-					}
-				} else {
-					// No custom deserializer - check if user provided a value
-					if cmd.IsSet("before") {
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.Before = typedField
+						}
+					} else {
 						return fmt.Errorf("flag --before requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
 					}
-					// No value provided - leave field as nil
 				}
 				if cmd.IsSet("limit") {
 					val := cmd.Int32("limit")
@@ -600,10 +689,103 @@ func ShowtimeServiceCommandsFlat(ctx context.Context, implOrFactory interface{},
 					val := cmd.String("anchor")
 					req.Anchor = &val
 				}
+				if cmd.IsSet("output-timezone") {
+					val := cmd.String("output-timezone")
+					req.OutputTimezone = &val
+				}
+			} else {
+				// Check for custom flag deserializer for showtimes.ListShowtimesRequest
+				deserializer, hasDeserializer := options.FlagDeserializer("showtimes.ListShowtimesRequest")
+				if hasDeserializer {
+					// Use custom deserializer for top-level request
+					requestFlags := protocli.NewFlagContainer(cmd, "")
+					msg, err := deserializer(cmdCtx, requestFlags)
+					if err != nil {
+						return fmt.Errorf("custom deserializer failed: %w", err)
+					}
+					if msg == nil {
+						return fmt.Errorf("custom deserializer returned nil message")
+					}
+					var ok bool
+					req, ok = msg.(*ListShowtimesRequest)
+					if !ok {
+						return fmt.Errorf("custom deserializer returned wrong type: expected *%s, got %T", "ListShowtimesRequest", msg)
+					}
+				} else {
+					// Use auto-generated flag parsing
+					req = &ListShowtimesRequest{}
+					for _, s := range cmd.StringSlice("from") {
+						val, err := parseShowtimeServicePdxSite(s)
+						if err != nil {
+							return fmt.Errorf("invalid value for --from: %w", err)
+						}
+						req.From = append(req.From, val)
+					}
+					// Field After: check for custom deserializer for google.protobuf.Timestamp
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						// Use custom deserializer for nested message
+						// Create FlagContainer for field flag: after
+						fieldFlags := protocli.NewFlagContainer(cmd, "after")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field After: %w", fieldErr)
+						}
+						// Handle nil return from deserializer (means skip/use default)
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.After = typedField
+						}
+					} else {
+						// No custom deserializer - check if user provided a value
+						if cmd.IsSet("after") {
+							return fmt.Errorf("flag --after requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
+						}
+						// No value provided - leave field as nil
+					}
+					// Field Before: check for custom deserializer for google.protobuf.Timestamp
+					if fieldDeserializer, hasFieldDeserializer := options.FlagDeserializer("google.protobuf.Timestamp"); hasFieldDeserializer {
+						// Use custom deserializer for nested message
+						// Create FlagContainer for field flag: before
+						fieldFlags := protocli.NewFlagContainer(cmd, "before")
+						fieldMsg, fieldErr := fieldDeserializer(cmdCtx, fieldFlags)
+						if fieldErr != nil {
+							return fmt.Errorf("failed to deserialize field Before: %w", fieldErr)
+						}
+						// Handle nil return from deserializer (means skip/use default)
+						if fieldMsg != nil {
+							typedField, fieldOk := fieldMsg.(*timestamppb.Timestamp)
+							if !fieldOk {
+								return fmt.Errorf("custom deserializer for google.protobuf.Timestamp returned wrong type: expected *Timestamp, got %T", fieldMsg)
+							}
+							req.Before = typedField
+						}
+					} else {
+						// No custom deserializer - check if user provided a value
+						if cmd.IsSet("before") {
+							return fmt.Errorf("flag --before requires a custom deserializer for google.protobuf.Timestamp (register with protocli.WithFlagDeserializer)")
+						}
+						// No value provided - leave field as nil
+					}
+					if cmd.IsSet("limit") {
+						val := cmd.Int32("limit")
+						req.Limit = &val
+					}
+					if cmd.IsSet("anchor") {
+						val := cmd.String("anchor")
+						req.Anchor = &val
+					}
+					if cmd.IsSet("output-timezone") {
+						val := cmd.String("output-timezone")
+						req.OutputTimezone = &val
+					}
+				}
 			}
 
 			// Open output writer
-			outputWriter, err := getOutputWriter(cmd, cmd.String("output"))
+			outputWriter, err := getShowtimeServiceOutputWriter(cmd, cmd.String("output"))
 			if err != nil {
 				return fmt.Errorf("failed to open output: %w", err)
 			}
@@ -696,7 +878,7 @@ func ShowtimeServiceCommandsFlat(ctx context.Context, implOrFactory interface{},
 				}
 
 				// Create local stream wrapper for direct call
-				localStream := &localServerStream_ListShowtimes{
+				localStream := &localServerStream_ShowtimeService_ListShowtimes{
 					ctx:       cmdCtx,
 					errors:    make(chan error),
 					responses: make(chan *ListShowtimesResponse),
@@ -752,7 +934,7 @@ func ShowtimeServiceCommandsFlat(ctx context.Context, implOrFactory interface{},
 		},
 		Flags: flags_list_showtimes,
 		Name:  "list-showtimes",
-		Usage: "ListShowtimes (streaming)",
+		Usage: "Stream showtimes from a theater (Hollywood Theatre, Cinemagic, Cinema 21)",
 	})
 
 	// Create ServiceCLI for daemonize command
@@ -763,7 +945,7 @@ func ShowtimeServiceCommandsFlat(ctx context.Context, implOrFactory interface{},
 		RegisterFunc: func(s *grpc.Server, impl interface{}) {
 			RegisterShowtimeServiceServer(s, impl.(ShowtimeServiceServer))
 		},
-		ServiceName: "showtime-service",
+		ServiceName: "showtimes",
 	}
 
 	// Create daemonize command for starting gRPC server

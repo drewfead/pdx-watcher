@@ -1,0 +1,50 @@
+{
+  "data": {
+    "showingsForDate": {
+      "data": [
+        {
+          "id": "2693964",
+          "time": "2026-02-27T00:50:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"accessible\"}",
+          "movie": {
+            "id": "103934",
+            "name": "Arco",
+            "synopsis": "Arco, ten years old, lives in a far future. During his first flight in his rainbow suit, he loses control and falls in the past. Iris, a little girl his age from 2075, saw him fall. She rescues him and tries by all means to send him back to his era.",
+            "starring": "Margot Ringard Oldra, Oscar Tresanini, Nathanaël Perrot",
+            "directedBy": "Ugo Bienvenu",
+            "duration": 89,
+            "genre": "Animation",
+            "allGenres": "Animation, Adventure, Science Fiction, Fantasy, Family",
+            "rating": null,
+            "tmdbId": "804370",
+            "urlSlug": "arco"
+          }
+        },
+        {
+          "id": "2682965",
+          "time": "2026-02-27T03:00:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"subtitled digital accessible\"}",
+          "movie": {
+            "id": "97483",
+            "name": "Solaris",
+            "synopsis": "A psychologist is sent to a space station orbiting a planet called Solaris to investigate the death of a doctor and the mental problems of cosmonauts on the station. He soon discovers that the water on the planet is a type of brain which brings out repressed memories and obsessions.",
+            "starring": "Natalya Bondarchuk, Donatas Banionis, Jüri Järvet",
+            "directedBy": "Andrei Tarkovsky",
+            "duration": 167,
+            "genre": "Drama",
+            "allGenres": "Drama, Science Fiction, Mystery",
+            "rating": "PG",
+            "tmdbId": "593",
+            "urlSlug": "solaris1"
+          }
+        }
+      ],
+      "count": 2,
+      "resultVersion": "384152133"
+    }
+  }
+}

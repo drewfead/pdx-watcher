@@ -1,6 +1,7 @@
 package acceptance
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -14,38 +15,79 @@ import (
 )
 
 func TestAcceptance_ListShowtimes(t *testing.T) {
-	// Use golden HTTP server so we get deterministic output without Rod/live site.
-	// Path is relative to the acceptance package directory (where go test runs).
-	goldenDir := filepath.Join("..", "internal", "scraper", "golden", "hollywoodtheatre")
-	ht := scraper.HollywoodTheatre()
-	gs, ok := ht.(internal.GoldenScraper)
-	require.True(t, ok, "HollywoodTheatre must implement GoldenScraper")
-	handler, err := gs.MountGolden(t.Context(), goldenDir)
-	require.NoError(t, err, "MountGolden")
-	server := httptest.NewServer(handler)
-	t.Cleanup(server.Close)
+	type siteCase struct {
+		goldenDir string
+		site      proto.PdxSite
+		fromFlag  string
+		golden    func() internal.GoldenScraper
+		withTest  func(url string, client *http.Client) internal.Scraper
+	}
 
-	s := scraper.HollywoodTheatre(scraper.WithBaseURL(server.URL), scraper.WithClient(server.Client()))
-	registry := scraper.NewRegistry(scraper.WithScraperForSite(proto.PdxSite_HollywoodTheatre, s))
+	cases := []siteCase{
+		{
+			goldenDir: filepath.Join("..", "internal", "scraper", "golden", "hollywoodtheatre"),
+			site:      proto.PdxSite_HollywoodTheatre,
+			fromFlag:  "HollywoodTheatre",
+			golden:    func() internal.GoldenScraper { gs, _ := scraper.HollywoodTheatre().(internal.GoldenScraper)
+				return gs },
+			withTest: func(url string, client *http.Client) internal.Scraper {
+				return scraper.HollywoodTheatre(scraper.WithBaseURL(url), scraper.WithClient(client))
+			},
+		},
+		{
+			goldenDir: filepath.Join("..", "internal", "scraper", "golden", "cinemagic"),
+			site:      proto.PdxSite_Cinemagic,
+			fromFlag:  "Cinemagic",
+			golden:    func() internal.GoldenScraper { gs, _ := scraper.Cinemagic().(internal.GoldenScraper)
+				return gs },
+			withTest: func(url string, client *http.Client) internal.Scraper {
+				return scraper.Cinemagic(scraper.CinemagicWithBaseURL(url), scraper.CinemagicWithClient(client))
+			},
+		},
+		{
+			goldenDir: filepath.Join("..", "internal", "scraper", "golden", "cinema21"),
+			site:      proto.PdxSite_Cinema21,
+			fromFlag:  "Cinema21",
+			golden: func() internal.GoldenScraper {
+				gs, _ := scraper.Cinema21().(internal.GoldenScraper)
+				return gs
+			},
+			withTest: func(url string, client *http.Client) internal.Scraper {
+				return scraper.Cinema21(scraper.Cinema21WithBaseURL(url), scraper.Cinema21WithClient(client))
+			},
+		},
+	}
 
-	outputFile := filepath.Join(t.TempDir(), "output.json")
+	for _, tc := range cases {
+		t.Run(tc.fromFlag, func(t *testing.T) {
+			gs := tc.golden()
+			handler, err := gs.MountGolden(t.Context(), tc.goldenDir)
+			require.NoError(t, err, "MountGolden")
+			server := httptest.NewServer(handler)
+			t.Cleanup(server.Close)
 
-	rootCmd, err := root.Root(t.Context(), root.WithRegistry(registry))
-	require.NoError(t, err, "Root")
-	require.NotNil(t, rootCmd, "Root")
+			s := tc.withTest(server.URL, server.Client())
+			registry := scraper.NewRegistry(scraper.WithScraperForSite(tc.site, s))
 
-	// Golden data is Feb 2026; request that range so we get results.
-	err = rootCmd.Run(t.Context(), []string{
-		"pdx-watcher", "list-showtimes",
-		"--from", "HollywoodTheatre",
-		"--after", "2026-02-01T00:00:00Z",
-		"--before", "2026-03-01T00:00:00Z",
-		"--output", outputFile,
-	})
-	require.NoError(t, err, "Run")
+			outputFile := filepath.Join(t.TempDir(), "output.json")
 
-	outputBytes, err := os.ReadFile(outputFile)
-	require.NoError(t, err, "ReadFile")
-	require.NotEmpty(t, outputBytes, "output file should contain showtimes from golden data")
-	t.Log(string(outputBytes))
+			rootCmd, err := root.Root(t.Context(), root.WithRegistry(registry))
+			require.NoError(t, err, "Root")
+			require.NotNil(t, rootCmd, "Root")
+
+			err = rootCmd.Run(t.Context(), []string{
+				"pdx-watcher", "list-showtimes",
+				"--from", tc.fromFlag,
+				"--after", "2026-02-01T00:00:00Z",
+				"--before", "2026-03-01T00:00:00Z",
+				"--output", outputFile,
+			})
+			require.NoError(t, err, "Run")
+
+			outputBytes, err := os.ReadFile(outputFile)
+			require.NoError(t, err, "ReadFile")
+			require.NotEmpty(t, outputBytes, "output file should contain showtimes from golden data")
+			t.Log(string(outputBytes))
+		})
+	}
 }

@@ -28,6 +28,8 @@ type PdxSite int32
 const (
 	PdxSite_None             PdxSite = 0
 	PdxSite_HollywoodTheatre PdxSite = 1
+	PdxSite_Cinemagic        PdxSite = 2
+	PdxSite_Cinema21         PdxSite = 3
 )
 
 // Enum value maps for PdxSite.
@@ -35,10 +37,14 @@ var (
 	PdxSite_name = map[int32]string{
 		0: "None",
 		1: "HollywoodTheatre",
+		2: "Cinemagic",
+		3: "Cinema21",
 	}
 	PdxSite_value = map[string]int32{
 		"None":             0,
 		"HollywoodTheatre": 1,
+		"Cinemagic":        2,
+		"Cinema21":         3,
 	}
 )
 
@@ -71,14 +77,17 @@ func (PdxSite) EnumDescriptor() ([]byte, []int) {
 
 type ListShowtimesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	From  PdxSite                `protobuf:"varint,1,opt,name=from,proto3,enum=showtimes.PdxSite" json:"from,omitempty"`
+	// Omit for all theaters (interleaved); pass multiple times for specific theaters.
+	From []PdxSite `protobuf:"varint,1,rep,packed,name=from,proto3,enum=showtimes.PdxSite" json:"from,omitempty"`
 	// Time filtering options (mutually exclusive with after/before)
-	After         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=after,proto3,oneof" json:"after,omitempty"`   // only events after this time
-	Before        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=before,proto3,oneof" json:"before,omitempty"` // only events before this time
-	Limit         *int32                 `protobuf:"varint,6,opt,name=limit,proto3,oneof" json:"limit,omitempty"`  // page size (number of events per page)
-	Anchor        *string                `protobuf:"bytes,7,opt,name=anchor,proto3,oneof" json:"anchor,omitempty"` // token for retrieving the next page of results
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	After  *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=after,proto3,oneof" json:"after,omitempty"`
+	Before *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=before,proto3,oneof" json:"before,omitempty"`
+	Limit  *int32                 `protobuf:"varint,6,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
+	Anchor *string                `protobuf:"bytes,7,opt,name=anchor,proto3,oneof" json:"anchor,omitempty"`
+	// Display only: times are shown in this IANA timezone. Server ignores this.
+	OutputTimezone *string `protobuf:"bytes,8,opt,name=output_timezone,json=outputTimezone,proto3,oneof" json:"output_timezone,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ListShowtimesRequest) Reset() {
@@ -111,11 +120,11 @@ func (*ListShowtimesRequest) Descriptor() ([]byte, []int) {
 	return file_showtimes_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ListShowtimesRequest) GetFrom() PdxSite {
+func (x *ListShowtimesRequest) GetFrom() []PdxSite {
 	if x != nil {
 		return x.From
 	}
-	return PdxSite_None
+	return nil
 }
 
 func (x *ListShowtimesRequest) GetAfter() *timestamppb.Timestamp {
@@ -146,10 +155,18 @@ func (x *ListShowtimesRequest) GetAnchor() string {
 	return ""
 }
 
+func (x *ListShowtimesRequest) GetOutputTimezone() string {
+	if x != nil && x.OutputTimezone != nil {
+		return *x.OutputTimezone
+	}
+	return ""
+}
+
 type ListShowtimesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Showtime      *Showtime              `protobuf:"bytes,1,opt,name=showtime,proto3" json:"showtime,omitempty"`                             // the showtime (present for all messages except potentially the last)
 	NextAnchor    *string                `protobuf:"bytes,2,opt,name=next_anchor,json=nextAnchor,proto3,oneof" json:"next_anchor,omitempty"` // token for the next page (only set on the last message if more results exist)
+	Site          *PdxSite               `protobuf:"varint,3,opt,name=site,proto3,enum=showtimes.PdxSite,oneof" json:"site,omitempty"`       // source theater for correct per-row display when interleaved
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -196,6 +213,13 @@ func (x *ListShowtimesResponse) GetNextAnchor() string {
 		return *x.NextAnchor
 	}
 	return ""
+}
+
+func (x *ListShowtimesResponse) GetSite() PdxSite {
+	if x != nil && x.Site != nil {
+		return *x.Site
+	}
+	return PdxSite_None
 }
 
 type Showtime struct {
@@ -586,22 +610,32 @@ var File_showtimes_proto protoreflect.FileDescriptor
 
 const file_showtimes_proto_rawDesc = "" +
 	"\n" +
-	"\x0fshowtimes.proto\x12\tshowtimes\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16proto/cli/v1/cli.proto\"\x90\x02\n" +
-	"\x14ListShowtimesRequest\x12&\n" +
-	"\x04from\x18\x01 \x01(\x0e2\x12.showtimes.PdxSiteR\x04from\x125\n" +
-	"\x05after\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x05after\x88\x01\x01\x127\n" +
-	"\x06before\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\x06before\x88\x01\x01\x12\x19\n" +
-	"\x05limit\x18\x06 \x01(\x05H\x02R\x05limit\x88\x01\x01\x12\x1b\n" +
-	"\x06anchor\x18\a \x01(\tH\x03R\x06anchor\x88\x01\x01B\b\n" +
+	"\x0fshowtimes.proto\x12\tshowtimes\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16proto/cli/v1/cli.proto\"\xb9\x06\n" +
+	"\x14ListShowtimesRequest\x12\xa9\x01\n" +
+	"\x04from\x18\x01 \x03(\x0e2\x12.showtimes.PdxSiteB\x80\x01\x92\xb5\x18|\n" +
+	"\x04from\x1anTheater(s) to list showtimes from (hollywood-theatre, cinemagic, cinema21). Repeat for multiple; omit for all.*\x04SITER\x04from\x12r\n" +
+	"\x05after\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB;\x92\xb5\x187\n" +
+	"\x05after\x1a(Only showtimes after this time (RFC3339)*\x04TIMEH\x00R\x05after\x88\x01\x01\x12v\n" +
+	"\x06before\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB=\x92\xb5\x189\n" +
+	"\x06before\x1a)Only showtimes before this time (RFC3339)*\x04TIMEH\x01R\x06before\x88\x01\x01\x12K\n" +
+	"\x05limit\x18\x06 \x01(\x05B0\x92\xb5\x18,\n" +
+	"\x05limit\x1a Max number of showtimes per page*\x01NH\x02R\x05limit\x88\x01\x01\x12b\n" +
+	"\x06anchor\x18\a \x01(\tBE\x92\xb5\x18A\n" +
+	"\x06anchor\x1a0Page token from previous response for pagination*\x05TOKENH\x03R\x06anchor\x88\x01\x01\x12\x99\x01\n" +
+	"\x0foutput_timezone\x18\b \x01(\tBk\x92\xb5\x18g\n" +
+	"\btimezone\x1aWDisplay times in this IANA timezone (e.g. America/Los_Angeles). Default: CLI local time*\x02TZH\x04R\x0eoutputTimezone\x88\x01\x01B\b\n" +
 	"\x06_afterB\t\n" +
 	"\a_beforeB\b\n" +
 	"\x06_limitB\t\n" +
-	"\a_anchor\"~\n" +
+	"\a_anchorB\x12\n" +
+	"\x10_output_timezone\"\xb4\x01\n" +
 	"\x15ListShowtimesResponse\x12/\n" +
 	"\bshowtime\x18\x01 \x01(\v2\x13.showtimes.ShowtimeR\bshowtime\x12$\n" +
 	"\vnext_anchor\x18\x02 \x01(\tH\x00R\n" +
-	"nextAnchor\x88\x01\x01B\x0e\n" +
-	"\f_next_anchor\"\x95\x03\n" +
+	"nextAnchor\x88\x01\x01\x12+\n" +
+	"\x04site\x18\x03 \x01(\x0e2\x12.showtimes.PdxSiteH\x01R\x04site\x88\x01\x01B\x0e\n" +
+	"\f_next_anchorB\a\n" +
+	"\x05_site\"\x95\x03\n" +
 	"\bShowtime\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\asummary\x18\x02 \x01(\tR\asummary\x12%\n" +
@@ -648,12 +682,20 @@ const file_showtimes_proto_rawDesc = "" +
 	"\x04tmdb\x18\x01 \x01(\v2\x15.showtimes.TMDBConfigR\x04tmdb\"%\n" +
 	"\n" +
 	"TMDBConfig\x12\x17\n" +
-	"\aapi_key\x18\x01 \x01(\tR\x06apiKey*)\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey*\x80\x01\n" +
 	"\aPdxSite\x12\b\n" +
-	"\x04None\x10\x00\x12\x14\n" +
-	"\x10HollywoodTheatre\x10\x012}\n" +
-	"\x0fShowtimeService\x12T\n" +
-	"\rListShowtimes\x12\x1f.showtimes.ListShowtimesRequest\x1a .showtimes.ListShowtimesResponse0\x01\x1a\x14\x9a\xb5\x18\x10\n" +
+	"\x04None\x10\x00\x12-\n" +
+	"\x10HollywoodTheatre\x10\x01\x1a\x17\xa2\xb5\x18\x13\n" +
+	"\x11hollywood-theatre\x12\x1e\n" +
+	"\tCinemagic\x10\x02\x1a\x0f\xa2\xb5\x18\v\n" +
+	"\tcinemagic\x12\x1c\n" +
+	"\bCinema21\x10\x03\x1a\x0e\xa2\xb5\x18\n" +
+	"\n" +
+	"\bcinema212\x95\x02\n" +
+	"\x0fShowtimeService\x12\xb5\x01\n" +
+	"\rListShowtimes\x12\x1f.showtimes.ListShowtimesRequest\x1a .showtimes.ListShowtimesResponse\"_\x8a\xb5\x18[\n" +
+	"\x0elist-showtimes\x12IStream showtimes from a theater (Hollywood Theatre, Cinemagic, Cinema 21)0\x01\x1aJ\x82\xb5\x182\n" +
+	"\tshowtimes\x12%List showtimes from Portland theaters\x9a\xb5\x18\x10\n" +
 	"\x0eShowtimeConfigB'Z%github.com/drewfead/pdx-watcher/protob\x06proto3"
 
 var (
@@ -687,20 +729,21 @@ var file_showtimes_proto_depIdxs = []int32{
 	9,  // 1: showtimes.ListShowtimesRequest.after:type_name -> google.protobuf.Timestamp
 	9,  // 2: showtimes.ListShowtimesRequest.before:type_name -> google.protobuf.Timestamp
 	3,  // 3: showtimes.ListShowtimesResponse.showtime:type_name -> showtimes.Showtime
-	9,  // 4: showtimes.Showtime.start_time:type_name -> google.protobuf.Timestamp
-	9,  // 5: showtimes.Showtime.end_time:type_name -> google.protobuf.Timestamp
-	4,  // 6: showtimes.Showtime.screening:type_name -> showtimes.ScreeningInfo
-	5,  // 7: showtimes.Showtime.movie:type_name -> showtimes.MovieInfo
-	6,  // 8: showtimes.ScreeningInfo.links:type_name -> showtimes.Link
-	6,  // 9: showtimes.MovieInfo.links:type_name -> showtimes.Link
-	8,  // 10: showtimes.ShowtimeConfig.tmdb:type_name -> showtimes.TMDBConfig
-	1,  // 11: showtimes.ShowtimeService.ListShowtimes:input_type -> showtimes.ListShowtimesRequest
-	2,  // 12: showtimes.ShowtimeService.ListShowtimes:output_type -> showtimes.ListShowtimesResponse
-	12, // [12:13] is the sub-list for method output_type
-	11, // [11:12] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	0,  // 4: showtimes.ListShowtimesResponse.site:type_name -> showtimes.PdxSite
+	9,  // 5: showtimes.Showtime.start_time:type_name -> google.protobuf.Timestamp
+	9,  // 6: showtimes.Showtime.end_time:type_name -> google.protobuf.Timestamp
+	4,  // 7: showtimes.Showtime.screening:type_name -> showtimes.ScreeningInfo
+	5,  // 8: showtimes.Showtime.movie:type_name -> showtimes.MovieInfo
+	6,  // 9: showtimes.ScreeningInfo.links:type_name -> showtimes.Link
+	6,  // 10: showtimes.MovieInfo.links:type_name -> showtimes.Link
+	8,  // 11: showtimes.ShowtimeConfig.tmdb:type_name -> showtimes.TMDBConfig
+	1,  // 12: showtimes.ShowtimeService.ListShowtimes:input_type -> showtimes.ListShowtimesRequest
+	2,  // 13: showtimes.ShowtimeService.ListShowtimes:output_type -> showtimes.ListShowtimesResponse
+	13, // [13:14] is the sub-list for method output_type
+	12, // [12:13] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_showtimes_proto_init() }

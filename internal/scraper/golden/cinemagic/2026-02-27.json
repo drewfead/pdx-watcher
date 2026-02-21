@@ -1,0 +1,50 @@
+{
+  "data": {
+    "showingsForDate": {
+      "data": [
+        {
+          "id": "2649942",
+          "time": "2026-02-28T03:00:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"digital accessible\"}",
+          "movie": {
+            "id": "101837",
+            "name": "Go",
+            "synopsis": "A supermarket clerk decides to step in for an absent drug dealer, setting off an explosive, comedic chain of events.",
+            "starring": "Sarah Polley, Timothy Olyphant, Katie Holmes",
+            "directedBy": "Doug Liman",
+            "duration": 102,
+            "genre": "Crime",
+            "allGenres": "Crime, Comedy, Thriller",
+            "rating": null,
+            "tmdbId": "9430",
+            "urlSlug": "go"
+          }
+        },
+        {
+          "id": "2651847",
+          "time": "2026-02-28T05:20:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"digital accessible\"}",
+          "movie": {
+            "id": "102881",
+            "name": "Furious",
+            "synopsis": "Furious is an unexplored dimension populated by cackling sorcerers, whispering statues, fat adolescent warriors and lots and lots of live chickens. Furious is power. It’s magic. It’s a kaleidoscopic siege on the concept of storytelling. And Furious is “RED HOT KARATE ACTION! Filmed entirely on location in Southern California!”",
+            "starring": "Simon Rhee, Phillip Rhee, Howard Jackson",
+            "directedBy": "Tom Sartori, Tim Everitt",
+            "duration": 71,
+            "genre": "Action",
+            "allGenres": "Action, Fantasy",
+            "rating": null,
+            "tmdbId": "167104",
+            "urlSlug": "furious"
+          }
+        }
+      ],
+      "count": 2,
+      "resultVersion": "2847383206"
+    }
+  }
+}

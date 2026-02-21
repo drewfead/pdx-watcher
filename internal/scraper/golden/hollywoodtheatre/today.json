@@ -1,1 +1,111 @@
-{"shows":[{"show_post_id":"11593","title":"THE TESTAMENT OF ANN LEE (Digital)","series":"","series_url":"","permalink":"https:\/\/hollywoodtheatre.org\/show\/the-testament-of-ann-lee-digital\/","image":"https:\/\/hollywoodtheatre.org\/wp-content\/uploads\/2025\/12\/testament-of-ann-lee.jpg","display_date":"Sunday, Feb 8th","query_date":"2026-02-08","format":"Digital","descriptive_audio":false,"hide_events":false,"events":[{"id":11769,"start_time":"6:30am"},{"id":11770,"start_time":"10:30am"}]},{"show_post_id":"11557","title":"MAKE WAY FOR TOMORROW in 35mm","series":"Cinema Classics","series_url":"https:\/\/hollywoodtheatre.org\/series\/cinema-classics\/","permalink":"https:\/\/hollywoodtheatre.org\/show\/make-way-for-tomorrow-in-35mm\/","image":"https:\/\/hollywoodtheatre.org\/wp-content\/uploads\/2026\/01\/make-way-for-tomorrow.jpg","display_date":"Sunday, Feb 8th","query_date":"2026-02-08","format":"35mm","descriptive_audio":false,"hide_events":false,"events":[{"id":11560,"start_time":"7:00am"}]},{"show_post_id":"11197","title":"MARTY SUPREME (Digital)","series":"","series_url":"","permalink":"https:\/\/hollywoodtheatre.org\/show\/marty-supreme-digital\/","image":"https:\/\/hollywoodtheatre.org\/wp-content\/uploads\/2025\/12\/marty-supreme.jpg","display_date":"Sunday, Feb 8th","query_date":"2026-02-08","format":"Digital","descriptive_audio":false,"hide_events":false,"events":[{"id":11730,"start_time":"7:30am"},{"id":11731,"start_time":"11:30am"}]},{"show_post_id":"11529","title":"DIRTY PAIR: PROJECT EDEN","series":"Animayhem","series_url":"https:\/\/hollywoodtheatre.org\/series\/animayhem\/","permalink":"https:\/\/hollywoodtheatre.org\/show\/dirty-pair-project-eden\/","image":"https:\/\/hollywoodtheatre.org\/wp-content\/uploads\/2026\/01\/DirtyPairProjectEDENBanner.jpg","display_date":"Sunday, Feb 8th","query_date":"2026-02-08","format":"","descriptive_audio":false,"hide_events":false,"events":[{"id":11531,"start_time":"11:00am"}]}]}
+{
+  "shows": [
+    {
+      "show_post_id": "11861",
+      "title": "ANIMATED OSCAR NOMINATED SHORT FILMS",
+      "series": "",
+      "series_url": "",
+      "permalink": "https://hollywoodtheatre.org/show/animated-oscar-nominated-short-films-3/",
+      "image": "https://hollywoodtheatre.org/wp-content/uploads/2026/02/animtated-2026.jpeg",
+      "display_date": "Saturday, Feb 21st",
+      "query_date": "2026-02-21",
+      "format": "Digital",
+      "descriptive_audio": false,
+      "hide_events": false,
+      "events": [
+        {
+          "id": 11864,
+          "start_time": "4:30am"
+        },
+        {
+          "id": 11865,
+          "start_time": "10:00am"
+        }
+      ]
+    },
+    {
+      "show_post_id": "11570",
+      "title": "MALCOLM X in 70mm",
+      "series": "70mm",
+      "series_url": "https://hollywoodtheatre.org/series/70mm/",
+      "permalink": "https://hollywoodtheatre.org/show/malcolm-x-in-70mm/",
+      "image": "https://hollywoodtheatre.org/wp-content/uploads/2026/01/malcolm-x.jpeg",
+      "display_date": "Saturday, Feb 21st",
+      "query_date": "2026-02-21",
+      "format": "70mm",
+      "descriptive_audio": false,
+      "hide_events": false,
+      "events": [
+        {
+          "id": 11696,
+          "start_time": "5:00am"
+        }
+      ]
+    },
+    {
+      "show_post_id": "11872",
+      "title": "LIVE ACTION OSCAR NOMINATED SHORT FILMS",
+      "series": "",
+      "series_url": "",
+      "permalink": "https://hollywoodtheatre.org/show/live-action-oscar-nominated-short-films-3/",
+      "image": "https://hollywoodtheatre.org/wp-content/uploads/2026/02/Live-Action-2026.jpg",
+      "display_date": "Saturday, Feb 21st",
+      "query_date": "2026-02-21",
+      "format": "Digital",
+      "descriptive_audio": false,
+      "hide_events": false,
+      "events": [
+        {
+          "id": 11875,
+          "start_time": "6:45am"
+        },
+        {
+          "id": 11876,
+          "start_time": "12:15pm"
+        }
+      ]
+    },
+    {
+      "show_post_id": "11736",
+      "title": "GOOD LUCK HAVE FUN DON’T DIE",
+      "series": "",
+      "series_url": "",
+      "permalink": "https://hollywoodtheatre.org/show/good-luck-have-fun-dont-die/",
+      "image": "https://hollywoodtheatre.org/wp-content/uploads/2026/01/GOOD-LUCK-HAVE-FUN-DONT-DIE_Still-1.jpg",
+      "display_date": "Saturday, Feb 21st",
+      "query_date": "2026-02-21",
+      "format": "Digital",
+      "descriptive_audio": false,
+      "hide_events": false,
+      "events": [
+        {
+          "id": 11883,
+          "start_time": "7:15am"
+        },
+        {
+          "id": 11884,
+          "start_time": "10:30am"
+        }
+      ]
+    },
+    {
+      "show_post_id": "10194",
+      "title": "ONE BATTLE AFTER ANOTHER in 70mm",
+      "series": "70mm",
+      "series_url": "https://hollywoodtheatre.org/series/70mm/",
+      "permalink": "https://hollywoodtheatre.org/show/one-battle-after-another-in-70mm/",
+      "image": "https://hollywoodtheatre.org/wp-content/uploads/2025/09/one-battle-after-another.jpg",
+      "display_date": "Saturday, Feb 21st",
+      "query_date": "2026-02-21",
+      "format": "70mm",
+      "descriptive_audio": false,
+      "hide_events": false,
+      "events": [
+        {
+          "id": 11566,
+          "start_time": "11:00am"
+        }
+      ]
+    }
+  ]
+}

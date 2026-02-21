@@ -1,0 +1,50 @@
+{
+  "data": {
+    "showingsForDate": {
+      "data": [
+        {
+          "id": "2559026",
+          "time": "2026-03-02T00:30:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"accessible\"}",
+          "movie": {
+            "id": "99787",
+            "name": "Mirror",
+            "synopsis": "A dying man in his forties recalls his childhood, his mother, the war and personal moments that tell of and juxtapose pivotal moments in Soviet history with daily life.",
+            "starring": "Margarita Terekhova, Ignat Daniltsev, Larisa Tarkovskaya",
+            "directedBy": "Andrei Tarkovsky",
+            "duration": 107,
+            "genre": "Drama",
+            "allGenres": "Drama, History",
+            "rating": "NR",
+            "tmdbId": "1396",
+            "urlSlug": "mirror"
+          }
+        },
+        {
+          "id": "2649949",
+          "time": "2026-03-02T03:00:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"digital accessible\"}",
+          "movie": {
+            "id": "102133",
+            "name": "Streets of Fire",
+            "synopsis": "Raven Shaddock and his gang of merciless biker friends kidnap rock singer Ellen Aim. Ellen's former lover, soldier-for-hire Tom Cody, happens to be passing through town on a visit. In an attempt to save his star act, Ellen's manager hires Tom to rescue her. Along with a former soldier, they battle through dangerous cityscapes, determined to get Ellen back.",
+            "starring": "Michael Paré, Diane Lane, Rick Moranis",
+            "directedBy": "Walter Hill",
+            "duration": 93,
+            "genre": "Action",
+            "allGenres": "Action",
+            "rating": "PG",
+            "tmdbId": "14746",
+            "urlSlug": "streets-of-fire"
+          }
+        }
+      ],
+      "count": 2,
+      "resultVersion": "249949555"
+    }
+  }
+}

@@ -1,6 +1,10 @@
 package internal
 
-import "time"
+import (
+	"time"
+
+	"github.com/drewfead/pdx-watcher/proto"
+)
 
 type SourceShowtime struct {
 	ID           string        `json:"id"`
@@ -37,18 +41,18 @@ type EnrichmentAudit struct {
 }
 
 type ScreeningInfo struct {
-	Title       string `json:"title"`
+	Title  string `json:"title"`
 	Subhed string `json:"subhed,omitempty"` // e.g. "in 35mm" from Hollywood listing, appended after TMDB title in summary
-	Series      string `json:"series"`
-	Host        string `json:"host"`
-	Links       []Link `json:"links"`
+	Series string `json:"series"`
+	Host   string `json:"host"`
+	Links  []Link `json:"links"`
 }
 
 type MovieInfo struct {
-	Title   string `json:"title"`
-	Tagline string `json:"tagline"`
+	Title    string `json:"title"`
+	Tagline  string `json:"tagline"`
 	Overview string `json:"overview"`
-	Links   []Link `json:"links"`
+	Links    []Link `json:"links"`
 }
 
 type Link struct {
@@ -65,5 +69,6 @@ type ListShowtimesRequest struct {
 
 type ShowtimeListItem struct {
 	Showtime   SourceShowtime `json:"showtime"`
+	Site       proto.PdxSite  `json:"site"`
 	NextAnchor string         `json:"next_anchor"`
 }

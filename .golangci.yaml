@@ -13,9 +13,6 @@ linters:
     presets:
       - comments
       - common-false-positives
-    paths:
-      - tools/tools.go
-
   disable:
     # Overly strict linters that don't provide enough value
     - exhaustruct        # Requiring all struct fields is too strict

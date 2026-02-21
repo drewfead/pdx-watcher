@@ -2,5 +2,5 @@
 version: v2
 deps:
   - name: buf.build/fernet/proto-cli
-    commit: 238e00ca385c455c9a913a3dda2f61b1
-    digest: b5:b1cadd6bccd11310d886a99be830e61a3bdebfaae97d2f6adbfba6e317b225dcd64d80a81b7c272b63b07856a3c09f2d9c2971f6a130827103ca6a9902c1e619
+    commit: 2206ab766ae64f1d93a8bb522adf1a78
+    digest: b5:ed7af20b26e1fe538ca7031d785ba0378e56400f76db4c0da063d8d10fd2f7fcea94cac51c3bb508e3b03e5081736bd5f66014f1b34689bfe9ed9ac4499cfb6f

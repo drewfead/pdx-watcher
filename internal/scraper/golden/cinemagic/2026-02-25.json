@@ -1,0 +1,50 @@
+{
+  "data": {
+    "showingsForDate": {
+      "data": [
+        {
+          "id": "2693966",
+          "time": "2026-02-26T00:50:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"accessible\"}",
+          "movie": {
+            "id": "103934",
+            "name": "Arco",
+            "synopsis": "Arco, ten years old, lives in a far future. During his first flight in his rainbow suit, he loses control and falls in the past. Iris, a little girl his age from 2075, saw him fall. She rescues him and tries by all means to send him back to his era.",
+            "starring": "Margot Ringard Oldra, Oscar Tresanini, Nathanaël Perrot",
+            "directedBy": "Ugo Bienvenu",
+            "duration": 89,
+            "genre": "Animation",
+            "allGenres": "Animation, Adventure, Science Fiction, Fantasy, Family",
+            "rating": null,
+            "tmdbId": "804370",
+            "urlSlug": "arco"
+          }
+        },
+        {
+          "id": "2686883",
+          "time": "2026-02-26T03:00:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"subtitled digital accessible\"}",
+          "movie": {
+            "id": "104290",
+            "name": "Blades of the Guardians",
+            "synopsis": "Dao Ma, the \"second most wanted fugitive,\" is entrusted by his benefactor, the chief of Mo family clan, to take on a mysterious escort mission-escorting the \"most wanted fugitive\" to Chang'an.",
+            "starring": "Wu Jing, Nicholas Tse Ting-Fung, Yu Shi",
+            "directedBy": "Yuen Woo-Ping",
+            "duration": 126,
+            "genre": "Action",
+            "allGenres": "Action, Drama, History",
+            "rating": "NR",
+            "tmdbId": "1305781",
+            "urlSlug": "blades-of-the-guardians"
+          }
+        }
+      ],
+      "count": 2,
+      "resultVersion": "2964548889"
+    }
+  }
+}

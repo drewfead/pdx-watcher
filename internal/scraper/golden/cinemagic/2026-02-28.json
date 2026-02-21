@@ -1,0 +1,70 @@
+{
+  "data": {
+    "showingsForDate": {
+      "data": [
+        {
+          "id": "2651849",
+          "time": "2026-03-01T00:40:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"digital accessible\"}",
+          "movie": {
+            "id": "101837",
+            "name": "Go",
+            "synopsis": "A supermarket clerk decides to step in for an absent drug dealer, setting off an explosive, comedic chain of events.",
+            "starring": "Sarah Polley, Timothy Olyphant, Katie Holmes",
+            "directedBy": "Doug Liman",
+            "duration": 102,
+            "genre": "Crime",
+            "allGenres": "Crime, Comedy, Thriller",
+            "rating": null,
+            "tmdbId": "9430",
+            "urlSlug": "go"
+          }
+        },
+        {
+          "id": "2649941",
+          "time": "2026-03-01T03:00:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"digital accessible\"}",
+          "movie": {
+            "id": "101836",
+            "name": "Blow Out",
+            "synopsis": "While recording sound effects for a slasher flick, Jack Terry stumbles upon a real-life horror: a car careening off a bridge and into a river. Jack jumps into the water and fishes out Sally from the car, but the other passenger is already dead — a governor intending to run for president. As Jack does some investigating of his tapes, and starts a perilous romance with Sally, he enters a tangled web of conspiracy that might leave him dead.",
+            "starring": "John Travolta, Nancy Allen, John Lithgow",
+            "directedBy": "Brian De Palma",
+            "duration": 108,
+            "genre": "Thriller",
+            "allGenres": "Thriller, Mystery, Crime",
+            "rating": "R",
+            "tmdbId": "11644",
+            "urlSlug": "blow-out-1"
+          }
+        },
+        {
+          "id": "2651848",
+          "time": "2026-03-01T05:25:00Z",
+          "published": true,
+          "past": false,
+          "displayMetaData": "{\"classes\":\"digital accessible\"}",
+          "movie": {
+            "id": "102133",
+            "name": "Streets of Fire",
+            "synopsis": "Raven Shaddock and his gang of merciless biker friends kidnap rock singer Ellen Aim. Ellen's former lover, soldier-for-hire Tom Cody, happens to be passing through town on a visit. In an attempt to save his star act, Ellen's manager hires Tom to rescue her. Along with a former soldier, they battle through dangerous cityscapes, determined to get Ellen back.",
+            "starring": "Michael Paré, Diane Lane, Rick Moranis",
+            "directedBy": "Walter Hill",
+            "duration": 93,
+            "genre": "Action",
+            "allGenres": "Action",
+            "rating": "PG",
+            "tmdbId": "14746",
+            "urlSlug": "streets-of-fire"
+          }
+        }
+      ],
+      "count": 3,
+      "resultVersion": "3728739967"
+    }
+  }
+}

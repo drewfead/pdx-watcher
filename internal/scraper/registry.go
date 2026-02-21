@@ -10,6 +10,9 @@ import (
 
 type Registry interface {
 	GetScraper(descriptor string) (internal.Scraper, error)
+	// AllSites returns the list of PdxSite values that have a scraper registered (excluding None).
+	// Used when --from is omitted to build an interleaved scraper for all theaters.
+	AllSites() []proto.PdxSite
 }
 
 type ScraperMiddleware func(internal.Scraper) internal.Scraper
@@ -37,12 +40,25 @@ func WithScraper(descriptor string, scraper internal.Scraper, middleware ...Scra
 
 func WithScraperForSite(site proto.PdxSite, scraper internal.Scraper, middleware ...ScraperMiddleware) RegistryOption {
 	return func(r *registry) {
-		WithScraper(site.Descriptor().Syntax().GoString(), scraper, middleware...)(r)
+		WithScraper(site.String(), scraper, middleware...)(r)
+		if site != proto.PdxSite_None {
+			r.allSites = append(r.allSites, site)
+		}
 	}
 }
 
 type registry struct {
 	scrapers map[string]internal.Scraper
+	allSites []proto.PdxSite
+}
+
+func (r *registry) AllSites() []proto.PdxSite {
+	if len(r.allSites) == 0 {
+		return nil
+	}
+	out := make([]proto.PdxSite, len(r.allSites))
+	copy(out, r.allSites)
+	return out
 }
 
 var ErrScraperNotFound = errors.New("scraper not found")
